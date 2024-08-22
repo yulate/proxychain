@@ -223,3 +223,22 @@ func (ps *ProxyStorage) UpdateProxy(ip string, port int, country, province, city
 	_, err := ps.db.Exec(updateProxyQuery, country, province, city, time.Now(), ip, port)
 	return err
 }
+
+// GetCountryStatistics 获取数据库中 country 为 "中国" 和其他国家的代理数量
+func (ps *ProxyStorage) GetCountryStatistics() (int, int, error) {
+	query := `
+		SELECT 
+			SUM(CASE WHEN country = '中国' THEN 1 ELSE 0 END) AS china_count,
+			SUM(CASE WHEN country != '中国' OR country IS NULL THEN 1 ELSE 0 END) AS non_china_count
+		FROM proxies;
+	`
+
+	var chinaCount int
+	var nonChinaCount int
+	err := ps.db.QueryRow(query).Scan(&chinaCount, &nonChinaCount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return chinaCount, nonChinaCount, nil
+}

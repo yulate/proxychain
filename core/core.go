@@ -20,11 +20,11 @@ import (
 )
 
 var (
-	proxyList  []string
-	proxyIndex = 0
-	mu         sync.Mutex // 保护 proxyIndex 的并发访问
-	ps_tmp     *database.ProxyStorage
-	usageCount = make(map[string]int) // 记录每个代理的使用次数
+	GlobeProxyList []string
+	proxyIndex     = 0
+	mu             sync.Mutex // 保护 proxyIndex 的并发访问
+	ps_tmp         *database.ProxyStorage
+	usageCount     = make(map[string]int) // 记录每个代理的使用次数
 )
 
 // loadProxies 从数据库中加载10个代理地址
@@ -40,17 +40,21 @@ func loadProxies(ps *database.ProxyStorage) {
 		if err != nil {
 			log.Fatalf("获取代理列表失败: %v", err)
 		}
+		log.Printf("更新当前代理列表 random %v", proxyList)
 	} else if common.GlobalConfig.Config.ObtainingProxyMode == "priority" {
 		proxyList, err = ps.GetActiveProxiesByPriorityLimit(10) // 一次性获取10个代理
 		if err != nil {
 			log.Fatalf("获取代理列表失败: %v", err)
 		}
+		log.Printf("更新当前代理列表 priority %v", proxyList)
 	}
 
 	if len(proxyList) == 0 {
 		log.Println("数据库中没有可用的代理IP。")
 		proxyPool.GetProxyBase(ps)
 	}
+
+	GlobeProxyList = proxyList
 }
 
 // getNextProxy 返回下一个代理地址
@@ -58,14 +62,14 @@ func getNextProxy() string {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if len(proxyList) == 0 {
+	if len(GlobeProxyList) == 0 {
 		log.Println("代理列表为空，无法获取下一个代理。")
 		proxyPool.GetProxyBase(ps_tmp)
 		return ""
 	}
 
-	proxy := proxyList[proxyIndex]
-	proxyIndex = (proxyIndex + 1) % len(proxyList)
+	proxy := GlobeProxyList[proxyIndex]
+	proxyIndex = (proxyIndex + 1) % len(GlobeProxyList)
 
 	// 增加使用次数
 	usageCount[proxy]++
