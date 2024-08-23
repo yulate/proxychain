@@ -242,3 +242,63 @@ func (ps *ProxyStorage) GetCountryStatistics() (int, int, error) {
 
 	return chinaCount, nonChinaCount, nil
 }
+
+// GetRandomProxiesFromCountry 随机获取指定国家的代理
+func (ps *ProxyStorage) GetRandomProxiesFromCountry(limit int, country string) ([]string, error) {
+	query := `
+		SELECT ip, port, protocol
+		FROM proxies
+		WHERE is_active = 1 AND country = ?
+		ORDER BY RANDOM()
+		LIMIT ?;
+	`
+	rows, err := ps.db.Query(query, country, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var proxies []string
+	for rows.Next() {
+		var ip, protocol string
+		var port int
+		err := rows.Scan(&ip, &port, &protocol)
+		if err != nil {
+			return nil, err
+		}
+		fullURL := fmt.Sprintf("%s://%s:%d", protocol, ip, port)
+		proxies = append(proxies, fullURL)
+	}
+
+	return proxies, nil
+}
+
+// GetActiveProxiesByPriorityFromCountry 获取指定国家的按优先级排序的代理
+func (ps *ProxyStorage) GetActiveProxiesByPriorityFromCountry(limit int, country string) ([]string, error) {
+	query := `
+		SELECT ip, port, protocol
+		FROM proxies
+		WHERE is_active = 1 AND country = ?
+		ORDER BY priority DESC
+		LIMIT ?;
+	`
+	rows, err := ps.db.Query(query, country, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var proxies []string
+	for rows.Next() {
+		var ip, protocol string
+		var port int
+		err := rows.Scan(&ip, &port, &protocol)
+		if err != nil {
+			return nil, err
+		}
+		fullURL := fmt.Sprintf("%s://%s:%d", protocol, ip, port)
+		proxies = append(proxies, fullURL)
+	}
+
+	return proxies, nil
+}

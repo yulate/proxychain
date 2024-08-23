@@ -31,6 +31,7 @@ type Config struct {
 
 	Config struct {
 		PreciseArea        bool   `yaml:"preciseArea"`        // 精确地区匹配
+		OnlyChina          bool   `yaml:"onlyChina"`          // 只使用中国节点
 		ObtainingProxyMode string `yaml:"obtainingProxyMode"` // 获取代理的模式
 		TaskTime           int    `yaml:"taskTime"`           // 定时任务轮询间隔时间
 		MiniProxyCount     int    `yaml:"miniProxyCount"`     // 数据库中最少代理数量的阈值

@@ -34,15 +34,26 @@ func loadProxies(ps *database.ProxyStorage) {
 	var err error
 	var proxyList = make([]string, 0)
 
+	// 检查是否只获取中国的代理
+	onlyChina := common.GlobalConfig.Config.OnlyChina
+
 	// 按照模式来决定获取代理
 	if common.GlobalConfig.Config.ObtainingProxyMode == "random" {
-		proxyList, err = ps.GetRandomProxies(10)
+		if onlyChina {
+			proxyList, err = ps.GetRandomProxiesFromCountry(10, "中国")
+		} else {
+			proxyList, err = ps.GetRandomProxies(10)
+		}
 		if err != nil {
 			log.Fatalf("获取代理列表失败: %v", err)
 		}
 		log.Printf("更新当前代理列表 random %v", proxyList)
 	} else if common.GlobalConfig.Config.ObtainingProxyMode == "priority" {
-		proxyList, err = ps.GetActiveProxiesByPriorityLimit(10) // 一次性获取10个代理
+		if onlyChina {
+			proxyList, err = ps.GetActiveProxiesByPriorityFromCountry(10, "中国")
+		} else {
+			proxyList, err = ps.GetActiveProxiesByPriorityLimit(10)
+		}
 		if err != nil {
 			log.Fatalf("获取代理列表失败: %v", err)
 		}
